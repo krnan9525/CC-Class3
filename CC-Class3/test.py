@@ -1,4 +1,4 @@
 def isPalindrome2(s):
  return s == s[::-1];
-
-print(isPalindrome2("12332"));
+a = raw_input("please input:")
+print(isPalindrome2(a));
