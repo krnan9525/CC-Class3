@@ -95,14 +95,3 @@
 
 (reset)
 (run)
-
-;;test now 2
-;;howareyougit 
-<<<<<<< HEAD
-;;sadasdh
-;asdhasdhoas;shdklfjhsdjk
-=======
-;;123131469564131345561
-;;mmmark
-;sdfsdfjklsdfh
->>>>>>> origin/master
