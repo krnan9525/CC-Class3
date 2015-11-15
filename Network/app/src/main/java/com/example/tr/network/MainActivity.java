@@ -31,7 +31,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.sql.SQLException;
-
+//////changed for github
 public class MainActivity extends Activity implements View.OnClickListener
 {
     private static final String DEBUG_TAG = "HttpExample";
