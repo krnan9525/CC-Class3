@@ -2,6 +2,8 @@ package com.example.tr.network;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.CursorLoader;
+import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
@@ -13,6 +15,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ListView;
+import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 
 import org.json.JSONArray;
@@ -26,13 +30,16 @@ import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.sql.SQLException;
 
 public class MainActivity extends Activity implements View.OnClickListener
 {
     private static final String DEBUG_TAG = "HttpExample";
     private EditText urlText;
-    private TextView textView;
+    //private TextView textView;
+    private ListView listView;
     private Button connectButton;
+    private MyDatabaseManager myDatabaseManager = new MyDatabaseManager(this);
 
     public void onCreate(Bundle savedInstanceState)
     {
@@ -40,9 +47,22 @@ public class MainActivity extends Activity implements View.OnClickListener
         setContentView(R.layout.activity_main);
 
         urlText       = (EditText) findViewById(R.id.myUrl);
-        textView      = (TextView) findViewById(R.id.myText);
+        //textView      = (TextView) findViewById(R.id.myText);
+        listView      = (ListView) findViewById(R.id.listView);
         connectButton = (Button) findViewById(R.id.button);
         connectButton.setOnClickListener(this);
+        try {
+            myDatabaseManager.open();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        //myDatabaseManager.CreateDb();
+        /*Cursor cursor = myDatabaseManager.GetCursor();
+        SimpleCursorAdapter simpleCursorAdapter = new SimpleCursorAdapter(this,R.layout.simple_list_item_1,cursor,new String[] {"name","checked"}, new int[]{R.id.textView,R.id.textView2});
+        listView.setAdapter(simpleCursorAdapter);*/
+        Cursor cursor = myDatabaseManager.GetCursor();
+        SimpleCursorAdapter simpleCursorAdapter = new SimpleCursorAdapter(this,R.layout.simple_list_item_1,cursor,new String[] {"name","checked"}, new int[]{R.id.textView,R.id.textView2});
+        listView.setAdapter(simpleCursorAdapter);
     }
 
     public void onClick(View view) {
@@ -55,18 +75,24 @@ public class MainActivity extends Activity implements View.OnClickListener
         NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
         if(networkInfo!=null && networkInfo.isConnected())
         {
-            new DownloadWebpageTask().execute(stringUrl);
+            new DownloadWebpageTask(this).execute(stringUrl);
+
         }
         else
         {
-            textView.setText("No network connection!");
+            //textView.setText("No network connection!");
         }
     }
 
     /* Use AsyncTask as an inner class to create a task away from the main UI thread. This task takes a URL string and uses it to create an HttpUrlConnection. Once the connection has been established, the AsyncTask downloads the contents of the webpage as an InputStream. Finally, the InputStream is converted into a string, which is displayed in the UI by the AsyncTask's onPostExecute method*/
     private class DownloadWebpageTask extends AsyncTask<String, Void, String>
     {
-        protected String doInBackground(String... urls) {
+        private Context context;
+        public DownloadWebpageTask(Context context_new)
+        {
+            context=context_new;
+        }
+        protected String doInBackground(String... urls ) {
             // params comes from the execute() call: params[0] is the url.
             try {
                 return downloadUrl(urls[0]);
@@ -78,15 +104,20 @@ public class MainActivity extends Activity implements View.OnClickListener
         protected void onPostExecute(String result) {
             try {
                 String s = "";
-                JSONObject reader = new JSONObject(result);
-                JSONArray jsonArray = reader.optJSONArray("");
-                for(int i = 0 ;i < reader.length();i++)
+                //JSONObject reader = new JSONObject(result);
+                JSONArray jsonArray = new  JSONArray(result);
+
+                for(int i = 0 ;i < jsonArray.length();i++)
                 {
                     JSONObject jsonObject = jsonArray.getJSONObject(i);
-                    s=s+"Task is:" + jsonObject.optString("title").toString() + ". And state is:" + jsonObject.optString("completed").toString() + "\n";
-
+                    //s=s+"Task is:" + jsonObject.optString("title").toString() + ". And state is:" + jsonObject.optString("completed").toString() + "\n";
+                    myDatabaseManager.DBInsert(jsonObject.optString("title").toString() , jsonObject.optString("completed").toString());
                 }
-                textView.setText(s);
+                //textView.setText(s);
+                //CursorLoader cursorLoader = new CursorLoader()
+                Cursor cursor = myDatabaseManager.GetCursor();
+                SimpleCursorAdapter simpleCursorAdapter = new SimpleCursorAdapter(context,R.layout.simple_list_item_1,cursor,new String[] {"name","checked"}, new int[]{R.id.textView,R.id.textView2});
+                listView.setAdapter(simpleCursorAdapter);
             }
             catch(Exception e)
             {
@@ -134,8 +165,14 @@ public class MainActivity extends Activity implements View.OnClickListener
     public String readIt(InputStream stream, int len) throws IOException, UnsupportedEncodingException {
         InputStreamReader inputData = new InputStreamReader(stream);
         BufferedReader reader = new BufferedReader(inputData,len);
-        char[] buffer = new char[len];
-        reader.read(buffer,0,len);
-        return new String(buffer);
+        //char[] buffer = new char[len];
+        String temp = "";
+        String aux="";
+        while((aux = reader.readLine()) != null)
+        {
+            temp+=aux;
+        }
+
+        return temp;
     }
 }
