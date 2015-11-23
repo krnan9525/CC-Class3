@@ -95,9 +95,3 @@
 
 (reset)
 (run)
-
-;;test now 2
-;;howareyougit 
-;;123131469564131345561
-;;mmmark
-;sdfsdfjklsdfh
